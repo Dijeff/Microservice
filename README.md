@@ -1,14 +1,24 @@
- string authenticationToken = actionContext.Request.Headers.Authorization.Parameter;
-                string decodedAuthenticationToken = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationToken));
-                string[] usernamePasswordArray = decodedAuthenticationToken.Split(':');
-                string username = usernamePasswordArray[0];
-                string password = usernamePasswordArray[1];
+ public class AuthorizedPersonnelSecurityModel
+    {
+        public static bool Login(string username, string password)
+        {
+            using (GlobalServiceEntities entities = new GlobalServiceEntities())
+            {
+                return entities.PersonalAutorizado.Any(user => user.nombre_usuario.Equals(username, StringComparison.OrdinalIgnoreCase) && user.contrasena == password);
+            }
+        }
 
-                if (AuthorizedPersonnelSecurityModel.Login(username, password))
-                {
-                    Thread.CurrentPrincipal = new GenericPrincipal(new GenericIdentity(username), null);
-                }
-                else
-                {
-                    actionContext.Response = actionContext.Request.CreateResponse(HttpStatusCode.Unauthorized, "Verifique el Usuario y contraseña. Acceso restringido, solo personal autorizado.");
-                }
+        private UsersModel user = new UsersModel();
+        public IQueryable<Usuarios> GetUsuariosAuthorizedPersonnel(string username)
+        {
+            switch (username.ToLower())
+            {
+                case "admin":
+                    return user.GetUsuarios();
+                default:
+                    throw new UnauthorizedAccessException("Acceso restringido, solo personal autorizado.");
+            }
+        }
+
+
+    }
